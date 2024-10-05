@@ -24,7 +24,7 @@ HTTPLabs is a collection of privacy-focused, client-side web tools designed to b
 
 1. Clone the repository:
    ```
-   git clone https://github.com/gavi/httplabs.git
+   git clone https://github.com/objectgraph/httplabs.git
    ```
 
 2. Navigate to the project directory:

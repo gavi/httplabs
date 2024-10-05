@@ -58,7 +58,7 @@ The Color Dropper Tool is a web-based application that allows users to pick colo
 
 1. Clone the repository:
    ```
-   git clone https://github.com/gavi/httplabs.git
+   git clone https://github.com/objectgraph/httplabs.git
    ```
 
 2. Navigate to the project directory:
