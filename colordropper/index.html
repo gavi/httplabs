@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Dropper Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        #zoomView {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-7xl bg-white shadow-lg rounded-lg p-6 flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Color Dropper Tool</h2>
+            <div class="flex space-x-2">
+                <button id="dropperBtn" class="p-2 rounded-full hover:bg-gray-200" title="Activate Dropper">
+                    <i data-lucide="pipette" class="w-6 h-6"></i>
+                </button>
+                <button id="pointerBtn" class="p-2 rounded-full hover:bg-gray-200 bg-blue-200" title="Regular Pointer">
+                    <i data-lucide="mouse-pointer" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-grow">
+                <div id="imageContainer" class="hidden relative">
+                    <img id="uploadedImage" src="" alt="Uploaded Image" class="max-w-full h-auto">
+                    <div id="colorPickerCursor" class="hidden absolute pointer-events-none border-2 border-white shadow-lg" style="width: 20px; height: 20px; border-radius: 50%;"></div>
+                </div>
+
+                <div id="dropArea" class="border-dashed border-4 border-gray-300 p-6 text-center cursor-pointer">
+                    Drag & Drop Image Here or Click to Upload
+                </div>
+            </div>
+
+            <div class="w-full md:w-64 flex flex-col gap-4">
+                <div id="zoomContainer" class="hidden border-2 border-gray-400 bg-white p-1" style="width: 250px; height: 250px;">
+                    <canvas id="zoomView" width="200" height="200" style="width: 100%; height: 100%;"></canvas>
+                </div>
+
+                <div id="colorInfo" class="hidden">
+                    <div id="colorPreview" class="w-full h-16 border border-gray-400 mb-2"></div>
+                    <div class="space-y-2">
+                        <p>RGB: <span id="rgbValue"></span></p>
+                        <div class="flex items-center">
+                            <p class="mr-2">Hex:</p>
+                            <input id="hexValue" class="border border-gray-300 px-2 py-1 w-24" readonly>
+                            <button id="copyHex" class="ml-2 p-1 bg-gray-200 hover:bg-gray-300 rounded" title="Copy Hex">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        const dropArea = document.getElementById('dropArea');
+        const imageContainer = document.getElementById('imageContainer');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const colorInfo = document.getElementById('colorInfo');
+        const colorPreview = document.getElementById('colorPreview');
+        const rgbValue = document.getElementById('rgbValue');
+        const hexValue = document.getElementById('hexValue');
+        const dropperBtn = document.getElementById('dropperBtn');
+        const pointerBtn = document.getElementById('pointerBtn');
+        const colorPickerCursor = document.getElementById('colorPickerCursor');
+        const zoomContainer = document.getElementById('zoomContainer');
+        const zoomView = document.getElementById('zoomView');
+        const copyHex = document.getElementById('copyHex');
+
+        let isDropperActive = false;
+
+        function setDropperMode(active) {
+            isDropperActive = active;
+            if (active) {
+                dropperBtn.classList.add('bg-blue-200');
+                pointerBtn.classList.remove('bg-blue-200');
+                if (!imageContainer.classList.contains('hidden')) {
+                    colorPickerCursor.classList.remove('hidden');
+                    zoomContainer.classList.remove('hidden');
+                }
+            } else {
+                pointerBtn.classList.add('bg-blue-200');
+                dropperBtn.classList.remove('bg-blue-200');
+                colorPickerCursor.classList.add('hidden');
+                zoomContainer.classList.add('hidden');
+            }
+        }
+
+        dropperBtn.addEventListener('click', () => setDropperMode(true));
+        pointerBtn.addEventListener('click', () => setDropperMode(false));
+
+        dropArea.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                handleFile(file);
+            };
+            input.click();
+        });
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('border-blue-500');
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('border-blue-500');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('border-blue-500');
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage.src = e.target.result;
+                    imageContainer.classList.remove('hidden');
+                    dropArea.classList.add('hidden');
+                    if (isDropperActive) {
+                        colorPickerCursor.classList.remove('hidden');
+                        zoomContainer.classList.remove('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function getColorAtPosition(x, y) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = uploadedImage.naturalWidth;
+            canvas.height = uploadedImage.naturalHeight;
+            ctx.drawImage(uploadedImage, 0, 0);
+
+            const rect = uploadedImage.getBoundingClientRect();
+            const scaleX = uploadedImage.naturalWidth / rect.width;
+            const scaleY = uploadedImage.naturalHeight / rect.height;
+
+            const pixelData = ctx.getImageData(Math.floor(x * scaleX), Math.floor(y * scaleY), 1, 1).data;
+            const [r, g, b] = pixelData;
+            const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+
+            return { r, g, b, hex };
+        }
+
+        function updateColorInfo(color) {
+            colorPreview.style.backgroundColor = color.hex;
+            rgbValue.textContent = `${color.r}, ${color.g}, ${color.b}`;
+            hexValue.value = color.hex;
+            colorInfo.classList.remove('hidden');
+        }
+
+        function updateZoomView(x, y) {
+            const zoomCtx = zoomView.getContext('2d');
+            const rect = uploadedImage.getBoundingClientRect();
+            const scaleX = uploadedImage.naturalWidth / rect.width;
+            const scaleY = uploadedImage.naturalHeight / rect.height;
+
+            const sourceX = Math.max(0, Math.floor(x * scaleX) - 10);
+            const sourceY = Math.max(0, Math.floor(y * scaleY) - 10);
+            const sourceWidth = Math.min(21, uploadedImage.naturalWidth - sourceX);
+            const sourceHeight = Math.min(21, uploadedImage.naturalHeight - sourceY);
+
+            zoomCtx.imageSmoothingEnabled = false;
+            zoomCtx.drawImage(
+                uploadedImage,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                0, 0, zoomView.width, zoomView.height
+            );
+
+            // Draw grid
+            zoomCtx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+            zoomCtx.lineWidth = 1;
+            for (let i = 0; i <= zoomView.width; i += zoomView.width / sourceWidth) {
+                zoomCtx.beginPath();
+                zoomCtx.moveTo(i, 0);
+                zoomCtx.lineTo(i, zoomView.height);
+                zoomCtx.stroke();
+            }
+            for (let i = 0; i <= zoomView.height; i += zoomView.height / sourceHeight) {
+                zoomCtx.beginPath();
+                zoomCtx.moveTo(0, i);
+                zoomCtx.lineTo(zoomView.width, i);
+                zoomCtx.stroke();
+            }
+
+            // Highlight center pixel
+            zoomCtx.strokeStyle = 'red';
+            zoomCtx.lineWidth = 2;
+            const centerX = Math.floor(zoomView.width / 2);
+            const centerY = Math.floor(zoomView.height / 2);
+            const pixelSize = zoomView.width / sourceWidth;
+            zoomCtx.strokeRect(centerX - pixelSize / 2, centerY - pixelSize / 2, pixelSize, pixelSize);
+        }
+
+        uploadedImage.addEventListener('mousemove', (e) => {
+            if (!isDropperActive) return;
+
+            const rect = uploadedImage.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            colorPickerCursor.style.left = `${x - 10}px`;
+            colorPickerCursor.style.top = `${y - 10}px`;
+
+            const color = getColorAtPosition(x, y);
+            colorPickerCursor.style.backgroundColor = color.hex;
+            updateColorInfo(color);
+            updateZoomView(x, y);
+        });
+
+        uploadedImage.addEventListener('mouseleave', () => {
+            if (isDropperActive) {
+                colorPickerCursor.classList.add('hidden');
+            }
+        });
+
+        uploadedImage.addEventListener('mouseenter', () => {
+            if (isDropperActive) {
+                colorPickerCursor.classList.remove('hidden');
+            }
+        });
+
+        uploadedImage.addEventListener('click', (e) => {
+            if (!isDropperActive) return;
+
+            const rect = uploadedImage.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const color = getColorAtPosition(x, y);
+            updateColorInfo(color);
+            setDropperMode(false);  // Switch back to regular mode after clicking
+        });
+
+        copyHex.addEventListener('click', () => {
+            hexValue.select();
+            document.execCommand('copy');
+            copyHex.classList.add('bg-green-200');
+            setTimeout(() => {
+                copyHex.classList.remove('bg-green-200');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
