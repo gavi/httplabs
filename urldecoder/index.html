@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Encoder and Decoder - HTTPLabs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-gray-800 text-white py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <h1 id="httplabs" class="text-lg font-semibold"><a href="/">HTTPLabs</a></h1>
+            <a href="https://github.com/objectgraph/httplabs" class="text-white hover:text-blue-400 flex items-center" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 .5C5.48.5.5 5.48.5 12a11.5 11.5 0 008.18 10.96c.6.11.82-.26.82-.58v-2.06c-3.34.73-4.04-1.6-4.04-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.74.08-.73.08-.73 1.22.09 1.86 1.25 1.86 1.25 1.08 1.85 2.84 1.32 3.53 1.01.11-.78.42-1.32.76-1.63-2.67-.3-5.48-1.33-5.48-5.93 0-1.31.47-2.38 1.25-3.22-.13-.3-.54-1.51.12-3.14 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.3-1.23 3.3-1.23.66 1.63.25 2.84.12 3.14.78.84 1.25 1.91 1.25 3.22 0 4.61-2.81 5.63-5.49 5.93.43.38.81 1.12.81 2.25v3.34c0 .32.21.69.83.58A11.5 11.5 0 0023.5 12c0-6.52-5.02-11.5-11.5-11.5z"/>
+                </svg>
+                GitHub
+            </a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <h1 id="url-encoder-decoder" class="text-3xl font-bold mb-8 text-center">URL Encoder and Decoder</h1>
+
+        <div class="flex space-x-4">
+            <div class="w-5/12">
+                <h2 class="text-xl font-semibold mb-2">Input</h2>
+                <textarea id="input" class="w-full h-[calc(100vh-200px)] p-2 border rounded" placeholder="Enter URL or text to encode/decode"></textarea>
+            </div>
+
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <button id="encodeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Encode URL
+                </button>
+                <button id="decodeBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Decode URL
+                </button>
+                <div id="result" class="mt-4 p-4 bg-gray-200 rounded max-w-xs text-center"></div>
+            </div>
+
+            <div class="w-5/12">
+                <h2 class="text-xl font-semibold mb-2">Output</h2>
+                <textarea id="output" class="w-full h-[calc(100vh-200px)] p-2 border rounded" readonly></textarea>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const encodeBtn = document.getElementById('encodeBtn');
+        const decodeBtn = document.getElementById('decodeBtn');
+        const result = document.getElementById('result');
+
+        encodeBtn.addEventListener('click', () => {
+            try {
+                output.value = encodeURIComponent(input.value);
+                result.textContent = 'Encoded successfully';
+                result.className = 'mt-4 p-4 bg-green-200 rounded max-w-xs text-center';
+            } catch (error) {
+                result.textContent = 'Error encoding URL';
+                result.className = 'mt-4 p-4 bg-red-200 rounded max-w-xs text-center';
+            }
+        });
+
+        decodeBtn.addEventListener('click', () => {
+            try {
+                output.value = decodeURIComponent(input.value);
+                result.textContent = 'Decoded successfully';
+                result.className = 'mt-4 p-4 bg-green-200 rounded max-w-xs text-center';
+            } catch (error) {
+                result.textContent = 'Error decoding URL';
+                result.className = 'mt-4 p-4 bg-red-200 rounded max-w-xs text-center';
+            }
+        });
+    </script>
+</body>
+</html>
